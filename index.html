@@ -20,7 +20,7 @@
                 if (!start) start = timestamp;
                 let progress = timestamp - start;
 
-                if (progress > 16.6) {
+                if (progress >= 16.6) {
                     let circles = document.getElementsByClassName("circle");
 
                     for(let nbr = 0; nbr < circles.length; nbr++)
@@ -34,43 +34,35 @@
 
             function updateCirclePosition(circle) {
 
-                    var centerX = Number(circle.getAttribute("cx"));
-                    var centerY = Number(circle.getAttribute("cy"));
-                    var xDirection = circle.getAttribute("xdirection");
-                    var yDirection = circle.getAttribute("ydirection");
-                    var r = Number(circle.getAttribute("r"));
-                    var speed = Number(circle.getAttribute("speed"));
+                var centerX = Number(circle.getAttribute("cx"));
+                var centerY = Number(circle.getAttribute("cy"));
+                var xVelocity = Number(circle.getAttribute("xvelocity"));
+                var yVelocity = Number(circle.getAttribute("yvelocity"));
+                var r = Number(circle.getAttribute("r"));
 
-                    var svg = document.getElementById("surface");
-                    var surfaceWidth = document.documentElement.clientWidth - 1;
-                    var surfaceHeight = document.documentElement.clientHeight - 1;
-                    svg.setAttribute("width", surfaceWidth);
-                    svg.setAttribute("height", surfaceHeight);
-            
-                    var outOfBoundsToRight = (centerX + r) >= surfaceWidth;
-                    var outOfBoundsToLeft = (centerX - r) <= 0;
-                    var outOfBoundsToDown = (centerY + r) >= surfaceHeight;
-                    var outOfBoundsToTop = (centerY - r) <= 0;
-                    
-                    
-                    if (outOfBoundsToRight) xDirection = "left";
-                    if (outOfBoundsToLeft) xDirection = "right";
-                    if (outOfBoundsToTop) yDirection = "down";
-                    if (outOfBoundsToDown) yDirection = "up";
+                var svg = document.getElementById("surface");
+                var surfaceWidth = document.documentElement.clientWidth - 1;
+                var surfaceHeight = document.documentElement.clientHeight - 1;
+                svg.setAttribute("width", surfaceWidth);
+                svg.setAttribute("height", surfaceHeight);
+        
+                var outOfBoundsToRight = (centerX + r) >= surfaceWidth;
+                var outOfBoundsToLeft = (centerX - r) <= 0;
+                var outOfBoundsToDown = (centerY + r) >= surfaceHeight;
+                var outOfBoundsToTop = (centerY - r) <= 0;
+                
+                if ((outOfBoundsToRight && xVelocity > 0) || (outOfBoundsToLeft && xVelocity < 0)) {
+                    xVelocity *= -1;
+                    circle.setAttribute("xvelocity", xVelocity);
+                }
 
-                    if (xDirection == "right")
-                        circle.setAttribute("cx", centerX + 3);
-                    else 
-                        circle.setAttribute("cx", centerX - 3);
+                if ((outOfBoundsToDown && yVelocity > 0) || (outOfBoundsToTop && yVelocity < 0)) {
+                    yVelocity *= -1;
+                    circle.setAttribute("yvelocity", yVelocity);
+                }
 
-                    circle.setAttribute("xdirection", xDirection);
-
-                    if (yDirection == "down")
-                        circle.setAttribute("cy", centerY + speed);
-                    else 
-                        circle.setAttribute("cy", centerY - speed);
-
-                    circle.setAttribute("ydirection", yDirection);
+                circle.setAttribute("cx", centerX + xVelocity);
+                circle.setAttribute("cy", centerY + yVelocity);
             }
 
             function circleClicked(evt) {
@@ -81,26 +73,27 @@
                 var centerX = Number(circle.getAttribute("cx"));
                 var centerY = Number(circle.getAttribute("cy"));
 
-                var newCircleA = createNewCircle(centerX, centerY, getRandomSize(), "right", "top", getRandomColor(), getRandomSpeed());
-                var newCircleB = createNewCircle(centerX, centerY, getRandomSize(), "left", "down", getRandomColor(), getRandomSpeed());
+                var newCircleA = createNewCircle(centerX, centerY, getRandomSize(), getRandomVelocity(), getRandomVelocity(), getRandomColor());
+                var newCircleB = createNewCircle(centerX, centerY, getRandomSize(), -1 * getRandomVelocity(), -1 * getRandomVelocity(), getRandomColor());
                                
                 parent.appendChild(newCircleA);
                 parent.appendChild(newCircleB);
                 circle.remove();
             }
 
-            function createNewCircle(centerX, centerY, radius, xDirection, yDirection, color, speed) {
+            function createNewCircle(centerX, centerY, radius, xVelocity, yVelocity, color) {
                 var svgNS = "http://www.w3.org/2000/svg"; 
                 var newCircle = document.createElementNS(svgNS, "circle");
                 newCircle.classList.add('circle');
-                newCircle.setAttribute("cx", centerX.toString());
-                newCircle.setAttribute("cy", centerY.toString());
+                newCircle.setAttribute("cx", centerX);
+                newCircle.setAttribute("cy", centerY);
                 newCircle.setAttribute("r", radius);
-                newCircle.setAttribute("xdirection", xDirection);
-                newCircle.setAttribute("ydirection", yDirection);
+                newCircle.setAttribute("xvelocity", xVelocity);
+                newCircle.setAttribute("yvelocity", yVelocity);
                 newCircle.setAttribute("fill", color);
-                newCircle.setAttribute("speed", speed.toString());
-                newCircle.addEventListener("click", circleClicked);
+                /* Mouse down is better because its difficult sometimes
+                   to get both up and down events in a fast moving circle. */
+                newCircle.addEventListener("mousedown", circleClicked);
 
                 return newCircle;
             }
@@ -118,7 +111,7 @@
                 return Math.random() * 30 + 21;
             }
 
-            function getRandomSpeed(){
+            function getRandomVelocity(){
                 return Math.random() * 8 + 1;
             }
         </script>
@@ -128,7 +121,7 @@
         <!--<h1>Teste</h1>-->
         <svg id="surface" style="position: absolute;">
             <circle class="circle" cx="100" cy="200" r="50" fill="green" onclick="circleClicked(evt);"
-             xdirection="right" ydirection="top" speed="3" />
+             xvelocity="3" yvelocity="3" />
         </svg>
     </section>
     </body>
